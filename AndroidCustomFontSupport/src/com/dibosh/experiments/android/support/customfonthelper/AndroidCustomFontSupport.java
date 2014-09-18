@@ -39,18 +39,85 @@ public class AndroidCustomFontSupport {
 	public static SpannableString getCorrectedBengaliFormat(String text,Typeface font,float size)
 	{
 		SpannableString spannable=null;
-		boolean banglaSupported=false;
+		boolean banglaSupported=AndroidCustomFontSupport.isBanglaSupportedInDevice();
+		
+		spannable=Constants.getBanglaSpannableWithSize(text, font, size, banglaSupported);
+//		spannable=Constants.getBanglaSpannableWithSize(text, font, size, true);//test
+		return spannable;
+	}
+	/**
+	 * Checks if the device has native bangla support.
+	 * true if supported.
+	 * @return Boolean
+	 */
+	public static boolean isBanglaSupportedInDevice()
+	{
 		Locale[] locales=Locale.getAvailableLocales();
 		for(Locale locale:locales)
 		{
-			if(locale.getDisplayName().toLowerCase().contains("bengali"))
+			//any possible bangla support
+			if((locale.toString().toLowerCase().contains("bn") && (locale.toString().toLowerCase().contains("bd") || locale.toString().toLowerCase().contains("bengali"))) 
+					|| locale.getCountry().toLowerCase().contains("bd") || locale.getDisplayCountry().toLowerCase().contains("bd"))
 			{
-				banglaSupported=true;
-				break;
+				return true;
 			}
 		}
-		spannable=Constants.getBanglaSpannableWithSize(text, font, size, banglaSupported);
-		return spannable;
+		return false;
+	}
+	/**
+	 * Get a spannable string encoded in UTF-8.
+	 * The spannable string can be set for any view elements which has 
+	 * setText(String),setTitle(String) or any other method that takes
+	 * a string to display.
+	 * N.B. You have to take care for font stuffs on yours.
+	 * Takes care of checking if the device supports bangla.
+	 * @param text a simple plain string;should not be encoded in utf before
+	 * @return SpannableString
+	 */
+	public static SpannableString getCorrectedBengaliFormat(String text)
+	{
+		if(!AndroidCustomFontSupport.isBanglaSupportedInDevice())
+		{
+			return Constants.getBanglaSpannable(text);
+		}
+		return new SpannableString(text);//normal
+	}
+	/**
+	 * Get a string encoded in UTF-8.
+	 * 
+	 * Takes care of checking if the device supports bangla.
+	 * @param text
+	 * @return String
+	 */
+	public static String getCorrectedBengaliFormatAsString(String text)
+	{
+		if(!AndroidCustomFontSupport.isBanglaSupportedInDevice())
+		{
+			return Constants.getBanglaString(text);
+		}
+		return text;//send it back!Moron,your device supports bangla!
+	}
+	/**
+	 * Experimental! On some devices <strong>getCorrectedBengaliFormat</strong> is not 
+	 * working for titlebars,tabs and native components.Use this method for them instead.
+	 * This method is a bit naive,checks if the device supports bangla,if doesn't 
+	 * forces to use BIJOY for which you must provide it an array of fonts containing
+	 * both the unicode and BIJOY fonts.
+	 * @param text a simple plain string;should not be encoded in utf before
+	 * @param fonts a 2 items array of fonts. The first one is a unicode font 
+	 * of course <b>solaimanlipinormal.ttf</b> & the second one is a bijoy font(e.g.<b>karnafuli.ttf</b>)
+	 * The reverse of this rule will result in a mess!
+	 * @param size
+	 * @return
+	 */
+	public static SpannableString getCorrectedBengaliFormatForNativeComponents(String text,Typeface[] fonts,float size)
+	{
+		if(!AndroidCustomFontSupport.isBanglaSupportedInDevice())
+		{
+			//if bangla is not supported
+			return Constants.getBanglaInBijoy(text, fonts[1], size);
+		}
+		return Constants.getBanglaSpannableWithSizeForNativeItems(text, fonts[0], size);
 	}
 	/**
 	 * This method is same as the old bls native library.Provided just to ensure backward 
@@ -64,7 +131,8 @@ public class AndroidCustomFontSupport {
 	@Deprecated
 	public static void getBengaliUTF(String text,Typeface font,View view)
 	{
-		SpannableString string=Constants.getBanglaSpannableWithSize(text,font, -1, false);
+		boolean banglaSupported=AndroidCustomFontSupport.isBanglaSupportedInDevice();
+		SpannableString string=Constants.getBanglaSpannableWithSize(text,font, -1, banglaSupported);
 		if(view instanceof TextView)
 		{
 			((TextView)view).setText(string);
@@ -77,5 +145,14 @@ public class AndroidCustomFontSupport {
 		{
 			((EditText)view).setText(string);
 		}
+	}
+	/**
+	 * Converts a simple plain string to UTF-8
+	 * @param text
+	 * @return
+	 */
+	public static String getBanglaUTFFromText(String text)
+	{
+		return Constants.getBanglaString(text);
 	}
 }
